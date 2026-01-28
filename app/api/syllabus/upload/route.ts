@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { s3Key, extractedText, textS3Key } = await processPDFUpload(
+    const { extractedText, s3Key, textS3Key } = await processPDFUpload(
       file,
       userId
     )
@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       name: "syllabus/extract",
       data: {
         userId,
-        s3Key,
-        textS3Key,
+        s3Key: s3Key ?? undefined,
+        textS3Key: textS3Key ?? undefined,
         extractedText: extractedText.text,
         sourceId,
       },

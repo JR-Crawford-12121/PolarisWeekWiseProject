@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridWeek from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
@@ -8,11 +8,13 @@ import interactionPlugin from "@fullcalendar/interaction"
 interface CalendarProps {
   onEventClick: (eventId: string) => void
   onDateClick: (date: Date) => void
+  refreshKey?: number
 }
 
-export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
+export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const [events, setEvents] = useState<any[]>([])
+  const rangeRef = useRef<{ start: string; end: string } | null>(null)
 
   const fetchEvents = async (start: string, end: string) => {
     try {
@@ -25,6 +27,12 @@ export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
       console.error("Failed to fetch events:", error)
     }
   }
+
+  useEffect(() => {
+    if (refreshKey > 0 && rangeRef.current) {
+      fetchEvents(rangeRef.current.start, rangeRef.current.end)
+    }
+  }, [refreshKey])
 
   return (
     <div className="h-full p-4">
@@ -39,6 +47,7 @@ export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
         }}
         events={events}
         datesSet={(arg) => {
+          rangeRef.current = { start: arg.startStr, end: arg.endStr }
           fetchEvents(arg.startStr, arg.endStr)
         }}
         eventClick={(info) => {

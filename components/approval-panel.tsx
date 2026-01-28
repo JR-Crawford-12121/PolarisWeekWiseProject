@@ -9,6 +9,7 @@ import { X } from "lucide-react"
 
 interface ApprovalPanelProps {
   onClose: () => void
+  onProposalUpdated?: () => void
 }
 
 interface Proposal {
@@ -31,7 +32,7 @@ interface Proposal {
   }>
 }
 
-export function ApprovalPanel({ onClose }: ApprovalPanelProps) {
+export function ApprovalPanel({ onClose, onProposalUpdated }: ApprovalPanelProps) {
   const [proposals, setProposals] = useState<Proposal | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
@@ -76,6 +77,7 @@ export function ApprovalPanel({ onClose }: ApprovalPanelProps) {
           description: `${type} ${status}`,
         })
         fetchProposals()
+        onProposalUpdated?.()
       }
     } catch (error) {
       toast({

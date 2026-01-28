@@ -63,6 +63,58 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await getOrCreateDemoUserId()
+
+    const body = await request.json()
+    const { title, startTime, endTime, description, location } = body
+
+    if (!title || !startTime || !endTime) {
+      return NextResponse.json(
+        { error: "title, startTime, and endTime required" },
+        { status: 400 }
+      )
+    }
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid startTime or endTime" },
+        { status: 400 }
+      )
+    }
+    if (end <= start) {
+      return NextResponse.json(
+        { error: "endTime must be after startTime" },
+        { status: 400 }
+      )
+    }
+
+    const event = await prisma.event.create({
+      data: {
+        userId,
+        title,
+        description: description ?? null,
+        startTime: start,
+        endTime: end,
+        location: location ?? null,
+        source: "manual",
+        status: "confirmed",
+      },
+    })
+
+    return NextResponse.json(event)
+  } catch (error) {
+    console.error("Create event error:", error)
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    )
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const userId = await getOrCreateDemoUserId()
