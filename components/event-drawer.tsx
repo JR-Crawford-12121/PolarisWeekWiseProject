@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,11 +56,7 @@ export function EventDrawer({ eventId, onClose }: EventDrawerProps) {
   const [useFormatting, setUseFormatting] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchEvent()
-  }, [eventId, useFormatting])
-
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(`/api/events/${eventId}?format=${useFormatting}`)
@@ -78,7 +74,11 @@ export function EventDrawer({ eventId, onClose }: EventDrawerProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [eventId, useFormatting, toast])
+
+  useEffect(() => {
+    fetchEvent()
+  }, [fetchEvent])
 
   const handleStatusChange = async (status: "confirmed" | "dismissed") => {
     try {
