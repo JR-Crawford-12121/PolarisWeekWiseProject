@@ -56,7 +56,7 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
         eventSources={[
           {
             id: `api-${refreshKey}`,
-            events: (info) => fetchEvents({ startStr: info.startStr, endStr: info.endStr }),
+            events: (info: { startStr: string; endStr: string }) => fetchEvents({ startStr: info.startStr, endStr: info.endStr }),
           },
         ]}
         eventClick={(info) => {
