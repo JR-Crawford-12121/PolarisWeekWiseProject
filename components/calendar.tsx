@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
+import { useRef, useEffect, useCallback } from "react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridWeek from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
@@ -13,24 +13,28 @@ interface CalendarProps {
 
 export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
-  const [events, setEvents] = useState<any[]>([])
-  const rangeRef = useRef<{ start: string; end: string } | null>(null)
 
-  const fetchEvents = async (start: string, end: string) => {
+  const fetchEvents = useCallback(async (fetchInfo: { startStr: string; endStr: string }) => {
     try {
-      const res = await fetch(`/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
+      const res = await fetch(
+        `/api/events?start=${encodeURIComponent(fetchInfo.startStr)}&end=${encodeURIComponent(fetchInfo.endStr)}`
+      )
       if (res.ok) {
         const data = await res.json()
-        setEvents(data)
+        return data
       }
     } catch (error) {
       console.error("Failed to fetch events:", error)
     }
-  }
+    return []
+  }, [])
 
   useEffect(() => {
-    if (refreshKey > 0 && rangeRef.current) {
-      fetchEvents(rangeRef.current.start, rangeRef.current.end)
+    if (refreshKey > 0 && calendarRef.current) {
+      const api = (calendarRef.current as any).getApi?.()
+      if (api?.refetchEvents) {
+        api.refetchEvents()
+      }
     }
   }, [refreshKey])
 
@@ -45,11 +49,12 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
           center: "title",
           right: "timeGridWeek",
         }}
-        events={events}
-        datesSet={(arg) => {
-          rangeRef.current = { start: arg.startStr, end: arg.endStr }
-          fetchEvents(arg.startStr, arg.endStr)
-        }}
+        eventSources={[
+          {
+            id: "api",
+            events: (info) => fetchEvents({ startStr: info.startStr, endStr: info.endStr }),
+          },
+        ]}
         eventClick={(info) => {
           onEventClick(info.event.id)
         }}
