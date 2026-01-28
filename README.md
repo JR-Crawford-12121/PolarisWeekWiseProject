@@ -145,3 +145,13 @@ npx prisma studio
 ## License
 
 MIT
+
+---
+
+## Phil Notes
+
+### Database Setup
+I couldn't get PostgreSQL to run a local database on my laptop for some reason, but I found a free online service (with limits on amounts I'll never hit unless a lot more people start using it) that fills the role perfectly. The project uses Neon (neon.tech) as the PostgreSQL database provider, which is a serverless PostgreSQL service that works seamlessly with Prisma and has a generous free tier.
+
+### Known Issues
+I have all my features working except one that struggles to understand which is how it displays the events on the Calendar. I may have it fixed by the time you look through it. The calendar uses FullCalendar's eventSources API and there have been some challenges with events not appearing immediately after creation (especially AI-generated events). I've implemented refresh mechanisms and z-index fixes for the today overlay, but there may still be edge cases where events don't display correctly.
