@@ -1,10 +1,34 @@
 "use client"
 
-import { signIn } from "next-auth/react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function SignInPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  // If already signed in, redirect to home (fixes "stuck on login" after OAuth callback)
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.replace("/")
+    }
+  }, [status, session, router])
+
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
+  if (status === "authenticated") {
+    return null // Will redirect in useEffect
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
