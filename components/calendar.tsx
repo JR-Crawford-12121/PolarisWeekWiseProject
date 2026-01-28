@@ -30,12 +30,16 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
   }, [])
 
   useEffect(() => {
-    if (refreshKey > 0 && calendarRef.current) {
-      const api = (calendarRef.current as any).getApi?.()
+    if (refreshKey <= 0) return
+    const timer = setTimeout(() => {
+      const el = calendarRef.current
+      if (!el) return
+      const api = (el as any).getApi?.()
       if (api?.refetchEvents) {
         api.refetchEvents()
       }
-    }
+    }, 50)
+    return () => clearTimeout(timer)
   }, [refreshKey])
 
   return (
@@ -51,7 +55,7 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
         }}
         eventSources={[
           {
-            id: "api",
+            id: `api-${refreshKey}`,
             events: (info) => fetchEvents({ startStr: info.startStr, endStr: info.endStr }),
           },
         ]}
@@ -62,9 +66,8 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
           onDateClick(info.date)
         }}
         eventContent={(eventInfo) => {
-          const status = eventInfo.event.extendedProps.status
+          const status = eventInfo.event.extendedProps?.status
           const isProposed = status === "proposed"
-          
           return (
             <div
               className={`p-1 rounded text-xs ${

@@ -57,3 +57,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* FullCalendar: keep events visible above today highlight */
+.fc-timegrid-event-harness,
+.fc-timegrid-event {
+  position: relative;
+  z-index: 2;
+}
+.fc .fc-day-today,
+.fc .fc-slot-today {
+  z-index: 0;
+}
+.fc .fc-day-today::before,
+.fc .fc-slot-today::before {
+  pointer-events: none;
+}
