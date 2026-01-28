@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getOrCreateDemoUserId } from "@/lib/demo-user"
 import { processPDFUpload } from "@/lib/pdf-extract"
 import { inngest } from "@/inngest/client"
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const userId = await getOrCreateDemoUserId()
 
     const formData = await request.formData()
     const file = formData.get("file") as File
@@ -25,20 +21,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process PDF upload and extract text
     const { s3Key, extractedText, textS3Key } = await processPDFUpload(
       file,
-      session.user.id
+      userId
     )
 
-    // Store source evidence record
     const sourceId = `syllabus-${Date.now()}-${file.name}`
-    
-    // Trigger Inngest function for LLM processing
+
     await inngest.send({
       name: "syllabus/extract",
       data: {
-        userId: session.user.id,
+        userId,
         s3Key,
         textS3Key,
         extractedText: extractedText.text,

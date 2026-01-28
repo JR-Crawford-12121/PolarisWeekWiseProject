@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridWeek from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
-import { formatInAppTimezone } from "@/lib/timezone"
 
 interface CalendarProps {
   onEventClick: (eventId: string) => void
@@ -15,16 +14,9 @@ export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const [events, setEvents] = useState<any[]>([])
 
-  const fetchEvents = async () => {
-    const calendar = calendarRef.current?.getApi()
-    if (!calendar) return
-
-    const view = calendar.view
-    const start = view.activeStart.toISOString()
-    const end = view.activeEnd.toISOString()
-
+  const fetchEvents = async (start: string, end: string) => {
     try {
-      const res = await fetch(`/api/events?start=${start}&end=${end}`)
+      const res = await fetch(`/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
       if (res.ok) {
         const data = await res.json()
         setEvents(data)
@@ -33,10 +25,6 @@ export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
       console.error("Failed to fetch events:", error)
     }
   }
-
-  useEffect(() => {
-    fetchEvents()
-  }, [])
 
   return (
     <div className="h-full p-4">
@@ -50,6 +38,9 @@ export function Calendar({ onEventClick, onDateClick }: CalendarProps) {
           right: "timeGridWeek",
         }}
         events={events}
+        datesSet={(arg) => {
+          fetchEvents(arg.startStr, arg.endStr)
+        }}
         eventClick={(info) => {
           onEventClick(info.event.id)
         }}

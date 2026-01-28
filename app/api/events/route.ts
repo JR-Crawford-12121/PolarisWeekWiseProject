@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getOrCreateDemoUserId } from "@/lib/demo-user"
 import { prisma } from "@/lib/prisma"
-import { formatInAppTimezone } from "@/lib/timezone"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const userId = await getOrCreateDemoUserId()
 
     const searchParams = request.nextUrl.searchParams
     const start = searchParams.get("start")
@@ -24,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const events = await prisma.event.findMany({
       where: {
-        userId: session.user.id,
+        userId,
         startTime: {
           gte: new Date(start),
           lte: new Date(end),
@@ -70,10 +65,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const userId = await getOrCreateDemoUserId()
 
     const body = await request.json()
     const { id, status } = body
@@ -85,11 +77,10 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Verify ownership
     const event = await prisma.event.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId,
       },
     })
 

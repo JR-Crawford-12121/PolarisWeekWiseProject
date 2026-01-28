@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getOrCreateDemoUserId } from "@/lib/demo-user"
 import { prisma } from "@/lib/prisma"
 import {
   callLLMWithSchema,
@@ -13,15 +12,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const userId = await getOrCreateDemoUserId()
 
     const event = await prisma.event.findFirst({
       where: {
         id: params.id,
-        userId: session.user.id,
+        userId,
       },
       include: {
         course: true,

@@ -1,38 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import FullCalendar from "@fullcalendar/react"
-import timeGridWeek from "@fullcalendar/timegrid"
-import interactionPlugin from "@fullcalendar/interaction"
+import { useState } from "react"
 import { Calendar } from "@/components/calendar"
 import { EventDrawer } from "@/components/event-drawer"
 import { ApprovalPanel } from "@/components/approval-panel"
 import { SyllabusUpload } from "@/components/syllabus-upload"
+import { AIChatPanel } from "@/components/ai-chat-panel"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
+import { MessageSquare } from "lucide-react"
 
 export default function HomePage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const { toast } = useToast()
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
   const [showApprovalPanel, setShowApprovalPanel] = useState(false)
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin")
-    }
-  }, [status, router])
-
-  if (status === "loading") {
-    return <div className="p-8">Loading...</div>
-  }
-
-  if (!session) {
-    return null
-  }
+  const [showAIPanel, setShowAIPanel] = useState(false)
 
   return (
     <div className="flex h-screen flex-col">
@@ -49,31 +29,10 @@ export default function HomePage() {
             </Button>
             <Button
               variant="outline"
-              onClick={async () => {
-                try {
-                  const res = await fetch("/api/gmail/sync", { method: "POST" })
-                  if (res.ok) {
-                    toast({
-                      title: "Gmail sync started",
-                      description: "Processing important emails...",
-                    })
-                  }
-                } catch (error) {
-                  toast({
-                    title: "Error",
-                    description: "Failed to sync Gmail",
-                    variant: "destructive",
-                  })
-                }
-              }}
+              onClick={() => setShowAIPanel(true)}
             >
-              Sync Gmail
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-            >
-              Log out
+              <MessageSquare className="mr-2 h-4 w-4" />
+              AI
             </Button>
           </div>
         </div>
@@ -84,7 +43,6 @@ export default function HomePage() {
           <Calendar
             onEventClick={(eventId) => setSelectedEvent(eventId)}
             onDateClick={(date) => {
-              // Could open create event dialog
               console.log("Date clicked:", date)
             }}
           />
@@ -103,6 +61,14 @@ export default function HomePage() {
           onClose={() => setSelectedEvent(null)}
         />
       )}
+
+      <AIChatPanel
+        open={showAIPanel}
+        onClose={() => setShowAIPanel(false)}
+        onEntriesCreated={() => {
+          // Optionally refresh calendar or proposals
+        }}
+      />
     </div>
   )
 }
