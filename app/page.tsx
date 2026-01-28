@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import FullCalendar from "@fullcalendar/react"
 import timeGridWeek from "@fullcalendar/timegrid"
@@ -68,6 +68,12 @@ export default function HomePage() {
               }}
             >
               Sync Gmail
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+            >
+              Log out
             </Button>
           </div>
         </div>
