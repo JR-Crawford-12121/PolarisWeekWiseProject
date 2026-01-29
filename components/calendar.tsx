@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect, useCallback, useState } from "react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridWeek from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
@@ -13,15 +13,21 @@ interface CalendarProps {
 
 export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null)
+  const [events, setEvents] = useState<any[]>([])
+  const [currentRange, setCurrentRange] = useState<{ start: string; end: string } | null>(null)
 
-  const fetchEvents = useCallback(async (fetchInfo: { startStr: string; endStr: string }) => {
+  const fetchEvents = useCallback(async (startStr: string, endStr: string) => {
     try {
       const res = await fetch(
-        `/api/events?start=${encodeURIComponent(fetchInfo.startStr)}&end=${encodeURIComponent(fetchInfo.endStr)}`
+        `/api/events?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`
       )
       if (res.ok) {
         const data = await res.json()
+        console.log("Fetched events:", data.length, "events for range", startStr, "to", endStr)
         return data
+      } else {
+        const error = await res.json()
+        console.error("Failed to fetch events:", error)
       }
     } catch (error) {
       console.error("Failed to fetch events:", error)
@@ -29,18 +35,15 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
     return []
   }, [])
 
+  // Fetch events when refreshKey changes
   useEffect(() => {
-    if (refreshKey <= 0) return
-    const timer = setTimeout(() => {
-      const el = calendarRef.current
-      if (!el) return
-      const api = (el as any).getApi?.()
-      if (api?.refetchEvents) {
-        api.refetchEvents()
-      }
-    }, 50)
-    return () => clearTimeout(timer)
-  }, [refreshKey])
+    if (currentRange) {
+      console.log("Refreshing calendar, refreshKey:", refreshKey)
+      fetchEvents(currentRange.start, currentRange.end).then((data) => {
+        setEvents(data)
+      })
+    }
+  }, [refreshKey, currentRange, fetchEvents])
 
   return (
     <div className="h-full p-4">
@@ -53,12 +56,17 @@ export function Calendar({ onEventClick, onDateClick, refreshKey = 0 }: Calendar
           center: "title",
           right: "timeGridWeek",
         }}
-        eventSources={[
-          {
-            id: `api-${refreshKey}`,
-            events: (info: { startStr: string; endStr: string }) => fetchEvents({ startStr: info.startStr, endStr: info.endStr }),
-          },
-        ]}
+        events={events}
+        datesSet={(arg) => {
+          // Update range when calendar view changes
+          const newRange = { start: arg.startStr, end: arg.endStr }
+          if (currentRange?.start !== newRange.start || currentRange?.end !== newRange.end) {
+            setCurrentRange(newRange)
+            fetchEvents(newRange.start, newRange.end).then((data) => {
+              setEvents(data)
+            })
+          }
+        }}
         eventClick={(info) => {
           onEventClick(info.event.id)
         }}
